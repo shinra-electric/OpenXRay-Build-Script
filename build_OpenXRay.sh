@@ -10,6 +10,12 @@ NC='\033[0m' # No Color
 export WORKDIR=${0:a:h}
 cd "$WORKDIR"
 
+# Detect CPU architecture
+ARCH_NAME="$(uname -m)"
+
+# Set found data var
+FOUND_DATA=true
+
 # Introduction
 echo -e "${PURPLE}This script will build OpenXRay as a native macOS app bundle${NC}"
 echo -e "${PURPLE}If it is run for the first time, it will also copy the game data to your Application Support folder${NC}\n"
@@ -20,6 +26,66 @@ echo "It can also be run by simply using ${GREEN}./build_OpenXRay.sh'${NC}"
 echo "It will not work correctly when using ${RED}sh source_engine_build.sh${NC}"
 echo "Alternatively, use Finder to set the default application for the script to be Terminal and double-click to open\n"
 
+# Functions for checking for Homebrew installation
+homebrew_check() {
+	echo "${PURPLE}Checking for Homebrew...${NC}"
+	if ! command -v brew &> /dev/null; then
+		echo -e "${PURPLE}Homebrew not found. Installing Homebrew...${NC}"
+		/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+		if [[ "${ARCH_NAME}" == "arm64" ]]; then 
+			(echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> $HOME/.zprofile
+			eval "$(/opt/homebrew/bin/brew shellenv)"
+			else 
+			(echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> $HOME/.zprofile
+			eval "$(/usr/local/bin/brew shellenv)"
+		fi
+		
+		# Check for errors
+		if [ $? -ne 0 ]; then
+			echo "${RED}There was an issue installing Homebrew${NC}"
+			echo "${PURPLE}Quitting script...${NC}"	
+			exit 1
+		fi
+	else
+		echo -e "${PURPLE}Homebrew found. Updating Homebrew...${NC}"
+		brew update
+	fi
+}
+
+## Homebrew dependencies
+# Install required dependencies
+# Function for checking for an individual dependency
+single_dependency_check() {
+	if [ -d "$(brew --prefix)/opt/$1" ]; then
+		echo -e "${GREEN}Found $1. Checking for updates...${NC}"
+			brew upgrade $1
+	else
+		 echo -e "${PURPLE}Did not find $1. Installing...${NC}"
+		brew install $1
+	fi
+}
+
+# Install required dependencies
+check_all_dependencies() {
+	echo -e "${PURPLE}Checking for Homebrew dependencies...${NC}"
+	# Required Homebrew packages
+	deps=( cmake dylibbundler glew libogg libvorbis lzo sdl2 theora )
+	
+	for dep in $deps[@]
+	do 
+		single_dependency_check $dep
+	done
+}
+
+check_data() {
+	if [ -d "${WORKDIR}/$1" ]; then 
+		echo -e "${GREEN}Found \"$1\" game data folder${NC}"
+	else
+		echo -e "${RED}Couldn't find the \"$1\" game data folder${NC}"
+		FOUND_DATA=false
+	fi
+}
+
 PS3='Would you like to continue? '
 OPTIONS=(
 	"Yes"
@@ -28,6 +94,18 @@ select opt in $OPTIONS[@]
 do
 	case $opt in
 		"Yes")
+			homebrew_check
+			check_all_dependencies
+			check_data levels
+			check_data localization
+			check_data mp
+			check_data patches
+			check_data resources
+			
+			if [ "$FOUND_DATA" = false ]; then 
+				echo -e "${PURPLE}The script will not attempt to copy game data${NC}"
+			fi
+			
 			break
 			;;
 		"Quit")
@@ -39,57 +117,6 @@ do
 		echo "Enter the number of the option and press enter to select"
 		;;
 	esac
-done
-
-# Checking for game data
-FOUND_DATA=true
-
-check_data() {
-	if [ -d "${WORKDIR}/$1" ]; then 
-		echo -e "${GREEN}Found \"$1\" game data folder${NC}"
-	else
-		echo -e "${RED}Couldn't find the \"$1\" game data folder${NC}"
-		FOUND_DATA=false
-	fi
-}
-
-check_data levels
-check_data localization
-check_data mp
-check_data patches
-check_data resources
-
-if [ "$FOUND_DATA" = false ]; then 
-	echo -e "${PURPLE}The script will not attempt to copy game data${NC}"
-fi
-
-# Check if Homebrew is installed
-if ! command -v brew &> /dev/null; then
-	echo -e "${PURPLE}Homebrew not found. Installing Homebrew...${NC}"
-	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-else
-	echo -e "${PURPLE}Homebrew found. Updating Homebrew...${NC}"
-	brew update
-fi
-
-## Homebrew dependencies
-# Install required dependencies
-echo -e "${PURPLE}Checking for Homebrew dependencies...${NC}"
-brew_dependency_check() {
-	if [ -d "$(brew --prefix)/opt/$1" ]; then
-		echo -e "${GREEN}Found $1. Checking for updates...${NC}"
-			brew upgrade $1
-	else
-		 echo -e "${PURPLE}Did not find $1. Installing...${NC}"
-		brew install $1
-	fi
-}
-
-deps=( cmake dylibbundler glew libogg libvorbis lzo sdl2 theora )
-
-for dep in $deps[@]
-do 
-	brew_dependency_check $dep
 done
 
 # Clone or Update Repository
