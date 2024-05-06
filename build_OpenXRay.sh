@@ -213,7 +213,8 @@ mv xray-16/bin/arm64/Release/xr_3da OpenXRay.app/Contents/MacOS
 mv xray-16/bin/arm64/Release/*.dylib OpenXRay.app/Contents/libs/
 mv xray-16/bin/arm64/Release/*.a OpenXRay.app/Contents/libs/
 
-install_name_tool -change @rpath/xrEngine.dylib @executable_path/../libs/xrEngine.dylib OpenXRay.app/Contents/MacOS/xr_3da 
+install_name_tool -change @rpath/xrEngine.dylib @executable_path/../libs/xrEngine.dylib OpenXRay.app/Contents/MacOS/xr_3da
+install_name_tool -change @rpath/xrGame.dylib @executable_path/../libs/xrGame.dylib OpenXRay.app/Contents/MacOS/xr_3da
 install_name_tool -change @rpath/xrAPI.dylib @executable_path/../libs/xrAPI.dylib OpenXRay.app/Contents/MacOS/xr_3da
 install_name_tool -change @rpath/xrCore.dylib @executable_path/../libs/xrCore.dylib OpenXRay.app/Contents/MacOS/xr_3da
 
