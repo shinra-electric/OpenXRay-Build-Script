@@ -69,7 +69,7 @@ single_dependency_check() {
 check_all_dependencies() {
 	echo -e "${PURPLE}Checking for Homebrew dependencies...${NC}"
 	# Required Homebrew packages
-	deps=( cmake dylibbundler glew libogg libvorbis lzo sdl2 theora )
+	deps=( cmake dylibbundler libogg libvorbis lzo sdl2 theora )
 	
 	for dep in $deps[@]
 	do 
