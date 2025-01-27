@@ -246,7 +246,7 @@ if [ "$FOUND_DATA" = true ]; then
 	fi
 fi
 
-# These newly built files should overwrite any existing versions
+# These files should overwrite any existing versions, as they may have been updated
 rm -rf $APP_SUPP/gamedata
 cp -R xray-16/res/gamedata $APP_SUPP
 cp xray-16/res/fsgame.ltx $APP_SUPP/fsgame.ltx
